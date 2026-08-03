@@ -168,6 +168,9 @@ void transform(
 			{
 				lin.errors |= LIN_ERROR_NOSLAVE;
 			}
+			if (header.data_flags & TMP_CRC_ERROR) {
+				lin.errors |= LIN_ERROR_CHECKSUM;
+			}
 			exporter.write_lin(hdr, lin);
 		}
 		else if (header.data_type == TECMP_DATA_ETHERNET)
