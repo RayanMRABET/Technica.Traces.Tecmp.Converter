@@ -33,6 +33,13 @@
 // No more bitshifting required
 #define TMP_CRC_ERROR 0x2000
 #define TMP_OVERFLOW 0x8000
+
+// LIN-specific Data Flags in tecmp_header.data_flags
+#define LIN_DF_OVERFLOW      0x8000
+#define LIN_DF_CHECKSUM_ERR  0x2000
+#define LIN_DF_NOSLAVE       0x0004
+#define LIN_DF_PARITY_ERR    0x0002
+
 #define NANOS_PER_SEC 1000000000
 
 #define PCAP_NG_MAGIC_NUMBER 0x0A0D0D0A
@@ -167,6 +174,18 @@ void transform(
 			else
 			{
 				lin.errors |= LIN_ERROR_NOSLAVE;
+			}
+			if (header.data_flags & LIN_DF_CHECKSUM_ERR) {
+				lin.errors |= LIN_ERROR_CHECKSUM;
+			}
+			if (header.data_flags & LIN_DF_PARITY_ERR) {
+				lin.errors |= LIN_ERROR_PARITY;
+			}
+			if (header.data_flags & LIN_DF_NOSLAVE) {
+				lin.errors |= LIN_ERROR_NOSLAVE;
+			}
+			if (header.data_flags & LIN_DF_OVERFLOW) {
+				lin.errors |= LIN_ERROR_OVERFLOW;
 			}
 			exporter.write_lin(hdr, lin);
 		}

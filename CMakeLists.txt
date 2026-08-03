@@ -62,6 +62,7 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND BUILD_TESTING)
     list(APPEND pcapng_tests "tecmp_eth_message")
     list(APPEND pcapng_tests "tecmp_can_pcapng")
     list(APPEND pcapng_tests "tecmp_can_tx")
+    list(APPEND pcapng_tests "lin_errors")
     list(APPEND pcapNG_tests "can_error_frames")
 
     foreach(pcapng_test ${pcapng_tests})
