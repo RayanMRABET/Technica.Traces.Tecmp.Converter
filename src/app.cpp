@@ -175,14 +175,18 @@ void transform(
 			{
 				lin.errors |= LIN_ERROR_NOSLAVE;
 			}
-			if (header.data_flags & LIN_DF_CHECKSUM_ERR)
+			if (header.data_flags & LIN_DF_CHECKSUM_ERR) {
 				lin.errors |= LIN_ERROR_CHECKSUM;
-			if (header.data_flags & LIN_DF_PARITY_ERR)
+			}
+			if (header.data_flags & LIN_DF_PARITY_ERR) {
 				lin.errors |= LIN_ERROR_PARITY;
-			if (header.data_flags & LIN_DF_NOSLAVE)
+			}
+			if (header.data_flags & LIN_DF_NOSLAVE) {
 				lin.errors |= LIN_ERROR_NOSLAVE;
-			if (header.data_flags & LIN_DF_OVERFLOW)
+			}
+			if (header.data_flags & LIN_DF_OVERFLOW) {
 				lin.errors |= LIN_ERROR_OVERFLOW;
+			}
 			exporter.write_lin(hdr, lin);
 		}
 		else if (header.data_type == TECMP_DATA_ETHERNET)
