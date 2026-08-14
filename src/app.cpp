@@ -40,6 +40,10 @@
 #define LIN_DF_NOSLAVE       0x0004
 #define LIN_DF_PARITY_ERR    0x0002
 
+// FlexRay-specific Data Flags in tecmp_header.data_flags
+#define TECMP_FR_WUS         0x0008 // Wake-up Symbol: no payload carried, Length is set to 0
+#define TECMP_FR_CAS         0x0020 // Collision Avoidance Symbol
+
 #define NANOS_PER_SEC 1000000000
 
 #define PCAP_NG_MAGIC_NUMBER 0x0A0D0D0A
@@ -98,7 +102,7 @@ void transform(
 	const uint8_t* packet_data
 ) {
 	int32_t iterator = 0;
-	tecmp_header header;
+	tecmp_header header = { 0 };
 	uint8_t* data;
 	int res = tecmp_next(packet_data, packet_header.captured_length, &iterator, &header, &data);
 	if (res == EINVAL) {
@@ -111,6 +115,32 @@ void transform(
 	// if we need to drop replay data
 	if (drop_replay_data && header.message_type == TECMP_TYPE_REPLAY_DATA) {
 		return;
+	}
+	// FlexRay wake-up (WUS) and collision avoidance (CAS) symbols carry no payload:
+	// their TECMP Length field is set to 0, which makes tecmp_next return ENODATA
+	// although the header (already filled in) is valid. Without this special handling
+	// the symbol would be skipped and, for an all-wakeup trace, yield an empty file.
+	if (res == ENODATA && header.data_type == TECMP_DATA_FLEXRAY &&
+		(header.data_flags & (TECMP_FR_WUS | TECMP_FR_CAS)))
+	{
+		packet_interface.timestamp_resolution = NANOS_PER_SEC;
+		packet_header.timestamp = tecmp_get_timespec(header);
+
+		frame_header hdr = { 0 };
+		hdr.channel_id = header.channel_id;
+		hdr.timestamp_resolution = packet_interface.timestamp_resolution;
+		hdr.timestamp = packet_header.timestamp;
+		auto tx = (header.data_flags & 0x4000) != 0;
+		hdr.flags = tx ? 2 : 1;
+		hdr.queue = tx ? 1 : 0;
+
+		flexray_frame fr;
+		fr.type = FR_TYPE_SYMBOL;
+		fr.channel = FR_CHANNEL_A;
+		fr.err_flags = 0;
+		fr.len = 0;
+
+		exporter.write_flexray(hdr, fr);
 	}
 	// tecmp packet
 	while (res == 0) {
